@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalog clasă — acces părinți</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F7F5EF;
+    --card: #FFFFFF;
+    --ink: #22304A;
+    --ink-soft: #5B6478;
+    --pen: #8C2F39;
+    --pen-soft: #F3E4E2;
+    --border: #E4E0D6;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--paper);
+    background-image: repeating-linear-gradient(to bottom, transparent, transparent 39px, var(--border) 40px);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  body { display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .card {
+    width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border);
+    border-top: 5px solid var(--pen); border-radius: 14px; padding: 34px 32px 32px; box-shadow: 0 12px 30px -12px rgba(34,48,74,0.18);
+  }
+  .eyebrow {
+    display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--pen); background: var(--pen-soft); padding: 4px 12px; border-radius: 20px; margin-bottom: 16px;
+  }
+  h1 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 24px; line-height: 1.3; margin: 0; }
+  h1::after { content: ''; display: block; width: 38px; height: 3px; background: var(--pen); margin-top: 12px; border-radius: 2px; }
+  .info-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 4px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; background: var(--paper); border: 1px solid var(--border);
+    color: var(--ink-soft); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px;
+  }
+  .divider { border: none; border-top: 1.5px dashed var(--border); margin: 22px 0 20px; }
+  .subtitle { font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; }
+  p.lead { margin: 0 0 20px; color: var(--ink-soft); font-size: 15px; line-height: 1.5; }
+  .anunt-banner { background: #FEF9C3; border: 1px solid #FDE68A; color: #78350F; padding: 10px 14px; border-radius: 9px; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+  .mesaj-elev { background: #DBEAFE; border: 1px solid #BFDBFE; color: #1E3A8A; padding: 10px 14px; border-radius: 9px; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 6px; }
+  input[type="text"], input[type="email"] {
+    width: 100%; font-size: 16px; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 9px;
+    background: var(--paper); color: var(--ink); letter-spacing: 0.02em;
+  }
+  input[type="text"]:focus, input[type="email"]:focus { outline: 2px solid var(--pen); outline-offset: 1px; border-color: var(--pen); }
+  button {
+    width: 100%; margin-top: 16px; padding: 13px 14px; font-size: 16px; font-weight: 600;
+    color: #fff; background: var(--pen); border: none; border-radius: 9px; cursor: pointer;
+  }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: 0.6; }
+  button.btn-secundar { background: #374151; }
+  button.btn-text { background: none; color: var(--ink-soft); text-decoration: underline; font-weight: 400; box-shadow: none; }
+  .msg { margin-top: 14px; font-size: 14px; line-height: 1.5; display: none; }
+  .msg.error { display: block; color: var(--pen); }
+  .msg.ok { display: block; color: #166534; }
+
+  .rd-h2 { font-family: "Fraunces", Georgia, serif; font-size: 16px; margin: 22px 0 8px; color: #333; border-bottom: 2px solid var(--pen); padding-bottom: 4px; }
+  .rd-tabel { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 6px; }
+  .rd-tabel th, .rd-tabel td { border: 1px solid var(--border); padding: 7px 9px; }
+  .rd-tabel th { background: var(--pen); color: #fff; text-align: center; font-weight: 600; }
+  .rd-c { text-align: center; }
+  .rd-disc { text-align: left; }
+  .rd-detalii { text-align: left; color: #666; font-size: 12px; }
+  .rd-zi { background: #F9FAFB; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .rd-zi-titlu { font-weight: 700; color: #1f2937; margin-bottom: 6px; font-size: 14px; }
+  .rd-ora-linie { display: flex; gap: 14px; padding: 6px 0; border-bottom: 1px solid #EEF0F2; font-size: 13px; }
+  .rd-ora-time { color: var(--pen); font-weight: 700; min-width: 46px; flex-shrink: 0; }
+  .abonare-box { background: #F9FAFB; border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 20px; font-size: 13px; }
+  .abonare-check { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 4px; }
+  .abonare-check input { width: auto; margin: 0; }
+
+  .tab-nav { display: flex; gap: 22px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border); }
+  .tab-btn {
+    background: none; border: none; width: auto; margin-top: 0; padding: 0 0 10px;
+    font-size: 14.5px; font-weight: 600; color: var(--ink-soft); cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  .tab-btn.tab-btn-activ { color: var(--pen); border-bottom-color: var(--pen); }
+
+  .skel { background: linear-gradient(90deg, #ECE9E0 25%, #F5F3EC 37%, #ECE9E0 63%); background-size: 400% 100%; animation: skel-pulse 1.3s ease infinite; border-radius: 6px; }
+  @keyframes skel-pulse { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  .skel-eyebrow { width: 38%; height: 11px; margin-bottom: 18px; }
+  .skel-title { width: 88%; height: 25px; margin-bottom: 10px; }
+  .skel-title2 { width: 55%; height: 25px; margin-bottom: 14px; }
+  .skel-sub { width: 60%; height: 13px; margin-bottom: 22px; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .card { box-shadow: none; border: none; max-width: 100%; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="card" id="card">
+    <div id="loading">
+      <div class="skel skel-eyebrow"></div>
+      <div class="skel skel-title"></div>
+      <div class="skel skel-title2"></div>
+      <div class="skel skel-sub"></div>
+    </div>
+
+    <div id="continut" style="display:none;">
+      <div class="eyebrow" id="scoala-linie" style="display:none;"></div>
+      <h1 id="titlu">Situația copilului tău</h1>
+      <div class="info-chips" id="detalii-linie" style="display:none;"></div>
+      <p class="lead">Introdu codul primit de la învățătoare ca să vezi notele și absențele actualizate.</p>
+
+      <hr class="divider">
+
+      <form id="acces" autocomplete="off">
+        <label for="cod">Cod primit de la învățătoare</label>
+        <input type="text" id="cod" name="cod" inputmode="text" autocapitalize="off" autocomplete="off" placeholder="ex: k3j9f2x1a" required>
+        <button type="submit" id="btn-acces">Vezi situația copilului</button>
+        <p class="msg error" id="eroare" role="alert"></p>
+      </form>
+    </div>
+  </main>
+
+<script>
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwyKxGLD5UYzjAhO7MkXvBxBhrIZTq1LqyGbVsPTqM9YMUr9VDIPKJTsRfPPFcbcNDk/exec';
+  const ZILE = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri'];
+
+  // Fix pentru conținut vechi arătat la revenire pe pagină (bfcache): dacă pagina e
+  // restaurată din memoria browserului, o reîncărcăm curat, mereu.
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) window.location.reload();
+  });
+
+  function cuTimeout(promisa, ms) {
+    return Promise.race([
+      promisa,
+      new Promise(function (_, reject) { setTimeout(function () { reject(new Error('timeout')); }, ms); })
+    ]);
+  }
+
+  function formatDataClient(s) {
+    if (!s) return '';
+    const p = s.split('-');
+    return p.length === 3 ? (p[2] + '.' + p[1] + '.' + p[0]) : s;
+  }
+  function formatDataOraClient(iso) {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      const zi = String(d.getDate()).padStart(2, '0');
+      const luna = String(d.getMonth() + 1).padStart(2, '0');
+      const ora = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return zi + '.' + luna + '.' + d.getFullYear() + ' ' + ora + ':' + min;
+    } catch (e) { return ''; }
+  }
+  function formatOraClient(t) {
+    if (!t) return '';
+    const p = String(t).split(':');
+    return p.length === 2 ? (p[0].padStart(2, '0') + ':' + p[1].padStart(2, '0')) : String(t);
+  }
+  function calculeazaMediaClient(note) {
+    if (!note || note.length === 0) return '-';
+    const vals = { FB: 4, B: 3, S: 2, I: 1 };
+    const sum = note.reduce(function (acc, n) { return acc + (vals[n.calificativ] || 0); }, 0);
+    const avg = sum / note.length;
+    return avg >= 3.5 ? 'FB' : avg >= 2.5 ? 'B' : avg >= 1.5 ? 'S' : 'I';
+  }
+
+  function randAnunturi(anunturi, cadru) {
+    return (anunturi || []).map(function (a) {
+      const dataTxt = a.data ? ' (' + formatDataClient(a.data) + ')' : '';
+      return '<div class="anunt-banner"><strong>📢 Anunț de la ' + cadru + dataTxt + ':</strong><br>' + a.text + '</div>';
+    }).join('');
+  }
+
+  // O notă/absență e "nouă" dacă nu exista, identică, în instantaneul salvat la
+  // ultima vizită a acestui părinte — o comparăm pe conținut, nu pe dată, ca să nu
+  // rămână marcată "nouă" la infinit și nici să scape ceva adăugat azi.
+  function esteNouaNota(disciplina, nota, snapshotAnterior) {
+    if (!snapshotAnterior) return true; // prima vizită — totul e nou pentru tine
+    const vechi = (snapshotAnterior.note && snapshotAnterior.note[disciplina]) || [];
+    return !vechi.some(function (n) { return n.calificativ === nota.calificativ && n.data === nota.data; });
+  }
+  function esteNouaAbsenta(disciplina, absenta, snapshotAnterior) {
+    if (!snapshotAnterior) return true;
+    const vechi = (snapshotAnterior.absente && snapshotAnterior.absente[disciplina]) || [];
+    return !vechi.some(function (a) { return a.data === absenta.data && a.motivata === absenta.motivata; });
+  }
+
+  function randCalificative(discipline, note, snapshotAnterior) {
+    return discipline.map(function (d) {
+      const notariD = note[d] || [];
+      const media = calculeazaMediaClient(notariD);
+      const areNou = notariD.some(function (n) { return esteNouaNota(d, n, snapshotAnterior); });
+      const detalii = notariD.map(function (n) {
+        return n.calificativ + ' (' + formatDataClient(n.data) + ')' + (esteNouaNota(d, n, snapshotAnterior) ? ' 🆕' : '');
+      }).join(', ') || '—';
+      const numeDisc = d + (areNou ? ' <span title="Nou de la ultima ta vizită">🆕</span>' : '');
+      return '<tr><td class="rd-disc">' + numeDisc + '</td><td class="rd-c"><strong>' + media + '</strong></td><td class="rd-detalii">' + detalii + '</td></tr>';
+    }).join('');
+  }
+
+  function randAbsente(discipline, absente, prag, snapshotAnterior) {
+    return discipline.map(function (d) {
+      const abs = absente[d] || [];
+      const total = abs.length;
+      const nemotivate = abs.filter(function (a) { return !a.motivata; }).length;
+      const evid = nemotivate >= prag;
+      const areNou = abs.some(function (a) { return esteNouaAbsenta(d, a, snapshotAnterior); });
+      const numeDisc = d + (areNou ? ' <span title="Nou de la ultima ta vizită">🆕</span>' : '');
+      return '<tr' + (evid ? ' style="background:#FEE2E2;"' : '') + '><td class="rd-disc">' + numeDisc + '</td><td class="rd-c">' + total + '</td>' +
+        '<td class="rd-c"' + (evid ? ' style="color:#DC2626;font-weight:800;"' : '') + '>' + nemotivate + (evid ? ' ⚠️' : '') + '</td></tr>';
+    }).join('');
+  }
+
+  function randOrar(orar) {
+    return ZILE.map(function (zi, idx) {
+      const ore = (orar[idx] || []).slice().sort(function (a, b) { return formatOraClient(a.time).localeCompare(formatOraClient(b.time)); });
+      if (!ore.length) return '';
+      const linii = ore.map(function (o) {
+        return '<div class="rd-ora-linie"><span class="rd-ora-time">' + formatOraClient(o.time) + '</span><span>' + (o.disciplina || '') + '</span></div>';
+      }).join('');
+      return '<div class="rd-zi"><div class="rd-zi-titlu">' + zi + '</div>' + linii + '</div>';
+    }).filter(Boolean).join('');
+  }
+
+  function afiseazaRaport(payload, cod) {
+    const elev = payload.elev;
+    const titlu = payload.titluCadru || '';
+    const nume = payload.numeProfesoara || '';
+    const cadru = (titlu + ' ' + nume).trim() || 'învățătoarei';
+
+    let chipuriHtml = '';
+    if (payload.numeClasa) chipuriHtml += '<span class="chip">🎒 ' + payload.numeClasa + '</span>';
+    chipuriHtml += randChipuri(payload.anScolarAfisat, cadru);
+
+    const snapshotAnterior = payload.snapshotAnterior;
+    const areCevaNou = (payload.discipline || []).some(function (d) {
+      return (elev.note[d] || []).some(function (n) { return esteNouaNota(d, n, snapshotAnterior); }) ||
+             (elev.absente[d] || []).some(function (a) { return esteNouaAbsenta(d, a, snapshotAnterior); });
+    });
+    const banerNou = areCevaNou ? '<div class="anunt-banner" style="background:#DBEAFE;border-color:#BFDBFE;color:#1E3A8A;">🆕 <strong>Ai ceva nou</strong> de la ultima ta vizită — vezi mai jos.</div>' : '';
+
+    const mesajElevHtml = elev.mesajParinti
+      ? '<div class="mesaj-elev"><strong>💬 Observația ' + cadru + ':</strong><br>' + elev.mesajParinti + '</div>' : '';
+
+    const orarBlocuri = randOrar(payload.orar || []);
+    const orarSectiune = orarBlocuri ? ('<h2 class="rd-h2">Orar</h2><div>' + orarBlocuri + '</div>') : '';
+
+    const boxAbonare = elev.notificariActive
+      ? '<div class="abonare-box no-print">' +
+        '  <p style="margin:0 0 10px;">✅ <strong>Ești abonat la notificări</strong> pentru situația școlară, pe <strong>' + elev.emailParinte + '</strong>.</p>' +
+        '  <button type="button" class="btn-secundar" id="btn-dezaboneaza">Dezabonează-mă</button>' +
+        '  <p class="msg" id="msg-abonare"></p>' +
+        '</div>'
+      : '<div class="abonare-box no-print">' +
+        '  <label class="abonare-check"><input type="checkbox" id="check-notif"> Anunță-mă pe email când apare ceva nou</label>' +
+        '  <input type="email" id="input-email-parinte" placeholder="email-ul tău" value="' + (elev.emailParinte || '') + '" style="margin-top:6px;">' +
+        '  <button type="button" class="btn-secundar" id="btn-salveaza-abonare" style="margin-top:10px;">Salvează</button>' +
+        '  <p class="msg" id="msg-abonare"></p>' +
+        '</div>';
+
+    const dc = elev.dateContact || {};
+    const camp_contact = [
+      ['numeMama', 'Nume mamă'], ['telefonMama', 'Telefon mamă'],
+      ['numeTata', 'Nume tată'], ['telefonTata', 'Telefon tată'],
+      ['adresa', 'Adresă']
+    ];
+    let statusContact = '';
+    if (elev.dateContact) {
+      const lipsa = camp_contact.filter(function (c) { return !dc[c[0]]; }).map(function (c) { return c[1]; });
+      statusContact = lipsa.length === 0
+        ? '<div class="anunt-banner" style="background:#DCFCE7;border-color:#BBF7D0;color:#166534;">✅ <strong>Toate datele au fost completate</strong> și au ajuns la învățătoare, pe ' + formatDataOraClient(dc.cand) + '.</div>'
+        : '<div class="anunt-banner">📋 Ai trimis date pe ' + formatDataOraClient(dc.cand) + ', dar mai lipsesc: <strong>' + lipsa.join(', ') + '</strong>. Completează mai jos și trimite din nou.</div>';
+    }
+
+    const formularContact =
+      statusContact +
+      '<p class="lead" style="margin-bottom:16px;">Datele astea ajung direct la învățătoare, la fișa copilului tău.</p>' +
+      '<label>Nume mamă</label><input type="text" id="cf-numeMama" value="' + (dc.numeMama || '') + '" placeholder="ex: Ionescu Maria">' +
+      '<label style="margin-top:10px;">Telefon mamă</label><input type="text" inputmode="numeric" id="cf-telefonMama" value="' + (dc.telefonMama || '') + '" placeholder="ex: 0722 123 456" oninput="filtreazaTelefon(this)">' +
+      '<label style="margin-top:10px;">Nume tată</label><input type="text" id="cf-numeTata" value="' + (dc.numeTata || '') + '" placeholder="ex: Ionescu Andrei">' +
+      '<label style="margin-top:10px;">Telefon tată</label><input type="text" inputmode="numeric" id="cf-telefonTata" value="' + (dc.telefonTata || '') + '" placeholder="ex: 0722 654 321" oninput="filtreazaTelefon(this)">' +
+      '<label style="margin-top:10px;">Adresă</label><input type="text" id="cf-adresa" value="' + (dc.adresa || '') + '" placeholder="ex: Str. Exemplu nr. 1, Ploiești">' +
+      '<button type="button" class="btn-secundar" id="btn-salveaza-contact" style="margin-top:14px;">Trimite datele</button>' +
+      '<p class="msg" id="msg-contact"></p>';
+
+    const card = document.getElementById('card');
+    card.innerHTML =
+      (payload.scoala ? '<div class="eyebrow">🏫 ' + payload.scoala + '</div>' : '') +
+      '<h1>' + elev.nume + '</h1>' +
+      '<div class="info-chips" style="margin-top:16px;margin-bottom:20px;">' + chipuriHtml + '</div>' +
+      '<div class="tab-nav no-print">' +
+      '<button type="button" class="tab-btn tab-btn-activ" id="tab-btn-catalog">📋 Catalog</button>' +
+      '<button type="button" class="tab-btn" id="tab-btn-contact">📇 Date de contact' + (elev.dateContact ? ' ✅' : '') + '</button>' +
+      '</div>' +
+      '<div id="tab-catalog">' +
+      randAnunturi(payload.anunturi, cadru) +
+      banerNou +
+      mesajElevHtml +
+      '<h2 class="rd-h2">Calificative</h2>' +
+      '<table class="rd-tabel"><thead><tr><th>Disciplină</th><th>Medie</th><th>Detalii</th></tr></thead>' +
+      '<tbody>' + randCalificative(payload.discipline || [], elev.note, snapshotAnterior) + '</tbody></table>' +
+      '<h2 class="rd-h2">Absențe</h2>' +
+      '<table class="rd-tabel"><thead><tr><th>Disciplină</th><th>Total</th><th>Nemotivate</th></tr></thead>' +
+      '<tbody>' + randAbsente(payload.discipline || [], elev.absente, payload.praguAbsente || 3, snapshotAnterior) + '</tbody></table>' +
+      orarSectiune +
+      boxAbonare +
+      '<button class="no-print" onclick="window.print()">🖨️ Salvează ca PDF</button>' +
+      '</div>' +
+      '<div id="tab-contact" style="display:none;">' + formularContact + '</div>' +
+      '<button type="button" class="no-print btn-text" id="btn-alt-cod">Caută alt cod</button>';
+
+    document.getElementById('tab-btn-catalog').addEventListener('click', function () { comutaTab('catalog'); });
+    document.getElementById('tab-btn-contact').addEventListener('click', function () { comutaTab('contact'); });
+    document.getElementById('btn-salveaza-contact').addEventListener('click', function () { trimiteDateContact(cod); });
+
+    const btnSalveaza = document.getElementById('btn-salveaza-abonare');
+    if (btnSalveaza) btnSalveaza.addEventListener('click', function () { salveazaAbonare(cod); });
+    const btnDezaboneaza = document.getElementById('btn-dezaboneaza');
+    if (btnDezaboneaza) btnDezaboneaza.addEventListener('click', function () { dezaboneaza(cod); });
+    document.getElementById('btn-alt-cod').addEventListener('click', function () { window.location.href = window.location.origin + window.location.pathname; });
+  }
+
+  function comutaTab(activ) {
+    document.getElementById('tab-catalog').style.display = activ === 'catalog' ? 'block' : 'none';
+    document.getElementById('tab-contact').style.display = activ === 'contact' ? 'block' : 'none';
+    document.getElementById('tab-btn-catalog').classList.toggle('tab-btn-activ', activ === 'catalog');
+    document.getElementById('tab-btn-contact').classList.toggle('tab-btn-activ', activ === 'contact');
+  }
+
+  function filtreazaTelefon(input) {
+    input.value = input.value.replace(/[^\d\s]/g, '');
+  }
+
+  function telefonValid(valoare) {
+    if (!valoare) return true; // câmp opțional — gol e ok
+    return valoare.replace(/\s/g, '').length === 10;
+  }
+
+  function trimiteDateContact(cod) {
+    const campuri = {
+      numeMama: document.getElementById('cf-numeMama').value.trim(),
+      telefonMama: document.getElementById('cf-telefonMama').value.trim(),
+      numeTata: document.getElementById('cf-numeTata').value.trim(),
+      telefonTata: document.getElementById('cf-telefonTata').value.trim(),
+      adresa: document.getElementById('cf-adresa').value.trim()
+    };
+    const msg = document.getElementById('msg-contact');
+    msg.className = 'msg';
+
+    const eroriTelefon = [];
+    if (!telefonValid(campuri.telefonMama)) eroriTelefon.push('telefonul mamei');
+    if (!telefonValid(campuri.telefonTata)) eroriTelefon.push('telefonul tatălui');
+    if (eroriTelefon.length) {
+      msg.textContent = '⚠️ Verifică ' + eroriTelefon.join(' și ') + ' — trebuie să aibă exact 10 cifre.';
+      msg.classList.add('error');
+      return;
+    }
+
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({ tip: 'dateContact', cod: cod }, campuri))
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r || !r.ok) throw new Error('neconfirmat');
+        msg.textContent = '✓ Trimis. Mulțumim!';
+        msg.classList.add('ok');
+      })
+      .catch(function () {
+        const qs = Object.keys(campuri).map(function (k) { return k + '=' + encodeURIComponent(campuri[k]); }).join('&');
+        window.location.href = APPS_SCRIPT_URL + '?trimiteDateContact=1&cod=' + encodeURIComponent(cod) + '&' + qs;
+      });
+  }
+
+  function dezaboneaza(cod) {
+    const msg = document.getElementById('msg-abonare');
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ tip: 'abonare', cod: cod, email: '', activ: false })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r || !r.ok) throw new Error('neconfirmat');
+        msg.className = 'msg ok';
+        msg.textContent = '✓ Dezabonat. Reîncarcă pagina dacă vrei să te abonezi din nou.';
+      })
+      .catch(function () {
+        const url = APPS_SCRIPT_URL + '?aboneaza=1&cod=' + encodeURIComponent(cod) + '&email=&activ=0';
+        window.location.href = url;
+      });
+  }
+
+  function salveazaAbonare(cod) {
+    const activ = document.getElementById('check-notif').checked;
+    const email = document.getElementById('input-email-parinte').value.trim();
+    const msg = document.getElementById('msg-abonare');
+    msg.className = 'msg';
+    if (activ && !email) {
+      msg.textContent = 'Scrie un email ca să activezi notificările.';
+      msg.classList.add('error');
+      return;
+    }
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ tip: 'abonare', cod: cod, email: email, activ: activ })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r || !r.ok) throw new Error('neconfirmat');
+        msg.textContent = '✓ Salvat.';
+        msg.classList.add('ok');
+      })
+      .catch(function () {
+        // Rezervă sigură: o pagină reală, care salvează și te aduce înapoi.
+        const url = APPS_SCRIPT_URL + '?aboneaza=1&cod=' + encodeURIComponent(cod) +
+          '&email=' + encodeURIComponent(email) + '&activ=' + (activ ? '1' : '0');
+        window.location.href = url;
+      });
+  }
+
+  function reveleaza() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('continut').style.display = 'block';
+  }
+
+  function randChipuri(anScolarAfisat, cadru) {
+    const chips = [];
+    if (anScolarAfisat) chips.push('<span class="chip">📅 An școlar ' + anScolarAfisat + '</span>');
+    if (cadru) chips.push('<span class="chip">👩‍🏫 ' + cadru + '</span>');
+    return chips.join('');
+  }
+
+  function populeazaGateway(info) {
+    if (!info) return;
+    if (info.scoala) {
+      const el = document.getElementById('scoala-linie');
+      el.textContent = '🏫 ' + info.scoala;
+      el.style.display = 'inline-block';
+    }
+    document.getElementById('titlu').textContent = info.numeClasa ? (info.numeClasa + ' — situația copilului tău') : 'Situația copilului tău';
+
+    const titlu = info.titluCadru || '';
+    const nume = info.numeProfesoara || '';
+    const cadru = (titlu + ' ' + nume).trim();
+
+    const chipuriHtml = randChipuri(info.anScolarAfisat, cadru);
+    if (chipuriHtml) {
+      const el = document.getElementById('detalii-linie');
+      el.innerHTML = chipuriHtml;
+      el.style.display = 'flex';
+    }
+
+    // Anunțurile nu mai vin prin ?info=1 — apar doar după ce codul e validat,
+    // pe pagina raportului elevului.
+  }
+
+  function cautaCod(cod) {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('continut').style.display = 'none';
+
+    function incearca(timeoutMs) {
+      const url = APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod) + '&formatare=json&_=' + Date.now() + Math.random();
+      return cuTimeout(fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }), timeoutMs);
+    }
+
+    incearca(9000)
+      .catch(function () { return incearca(10000); }) // o a doua încercare, înainte de a renunța
+      .then(function (payload) {
+        if (!payload || !payload.ok) {
+          reveleaza();
+          const eroare = document.getElementById('eroare');
+          eroare.textContent = 'Codul nu se potrivește. Mai verifică o dată cifrele primite de la învățătoare.';
+          eroare.style.display = 'block';
+          document.getElementById('cod').value = cod;
+          return;
+        }
+        afiseazaRaport(payload, cod);
+      })
+      .catch(function () {
+        // Rezervă sigură, dovedită: navigare reală direct către raport, dacă ambele încercări eșuează.
+        window.location.href = APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod) + '&_=' + Date.now();
+      });
+  }
+
+  // Apps Script poate fi mai lent la prima cerere după o vreme de inactivitate
+  // ("cold start") — de-asta încercăm de două ori, cu timp mai mult a doua oară,
+  // înainte să renunțăm și să arătăm titlul generic.
+  const CHEIE_CACHE_INFO = 'catalog_info_cache';
+
+  function salveazaInfoLocal(info) {
+    try { localStorage.setItem(CHEIE_CACHE_INFO, JSON.stringify(info)); } catch (e) {}
+  }
+  function citesteInfoLocal() {
+    try {
+      const raw = localStorage.getItem(CHEIE_CACHE_INFO);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function preiaInfo() {
+    return cuTimeout(fetch(APPS_SCRIPT_URL + '?info=1&_=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }), 6000)
+      .catch(function () {
+        return cuTimeout(fetch(APPS_SCRIPT_URL + '?info=1&_=' + Date.now() + '2', { cache: 'no-store' }).then(function (r) { return r.json(); }), 8000);
+      })
+      .then(function (info) {
+        salveazaInfoLocal(info); // reușit — păstrăm o copie, pentru data viitoare când s-ar putea să nu meargă
+        return info;
+      })
+      .catch(function () {
+        // Ambele încercări au eșuat — arătăm ce am reținut ultima dată cu succes,
+        // e mai bine decât pagina complet goală, chiar dacă ar putea fi puțin veche.
+        const local = citesteInfoLocal();
+        if (local) return local;
+        throw new Error('fara-info');
+      });
+  }
+
+  const codDinUrl = new URLSearchParams(window.location.search).get('cod');
+  const codCuratDinUrl = codDinUrl ? codDinUrl.trim().replace(/[^a-zA-Z0-9]/g, '') : '';
+
+  if (codCuratDinUrl && APPS_SCRIPT_URL.indexOf('XXXX') === -1) {
+    cautaCod(codCuratDinUrl);
+  } else if (APPS_SCRIPT_URL.indexOf('XXXX') === -1) {
+    preiaInfo()
+      .then(populeazaGateway)
+      .catch(function () {})
+      .finally(reveleaza);
+  } else {
+    reveleaza();
+  }
+
+  document.getElementById('acces').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const eroare = document.getElementById('eroare');
+    eroare.style.display = 'none';
+
+    const cod = document.getElementById('cod').value.trim().replace(/[^a-zA-Z0-9]/g, '');
+    if (!cod) {
+      eroare.textContent = 'Introdu codul primit de la învățătoare.';
+      eroare.style.display = 'block';
+      return;
+    }
+    if (APPS_SCRIPT_URL.indexOf('XXXX') !== -1) {
+      eroare.textContent = 'Site-ul nu e încă legat de catalog — completează APPS_SCRIPT_URL în cod.';
+      eroare.style.display = 'block';
+      return;
+    }
+    cautaCod(cod);
+  });
+</script>
+</body>
+</html>
