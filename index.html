@@ -128,7 +128,7 @@
   </main>
 
 <script>
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwyKxGLD5UYzjAhO7MkXvBxBhrIZTq1LqyGbVsPTqM9YMUr9VDIPKJTsRfPPFcbcNDk/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJqzUkQ8JQqQEQssOxCoPnN--xzpFyTwImO6w_GcmHmajknRbYTlCpEAv-K_wVi0Zi/exec';
   const ZILE = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri'];
 
   // Fix pentru conținut vechi arătat la revenire pe pagină (bfcache): dacă pagina e
@@ -136,6 +136,25 @@
   window.addEventListener('pageshow', function (event) {
     if (event.persisted) window.location.reload();
   });
+
+  // Tot ce vine de pe server se afișează ca TEXT: nu poate deveni cod sau etichete HTML.
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Numele cadrului didactic, la forma potrivită în propoziție, când titlul nu e completat:
+  // „Anunț de la învățătoarea” / „Observația învățătoarei”.
+  function cadruDidactic(titlu, nume, forma) {
+    const t = ((titlu || '') + ' ' + (nume || '')).trim();
+    if (t) return t;
+    return forma === 'gen' ? 'învățătoarei' : 'învățătoarea';
+  }
+
+  function emailValid(e) {
+    return /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']{2,}$/.test(String(e || '').trim());
+  }
 
   function cuTimeout(promisa, ms) {
     return Promise.race([
@@ -175,8 +194,8 @@
 
   function randAnunturi(anunturi, cadru) {
     return (anunturi || []).map(function (a) {
-      const dataTxt = a.data ? ' (' + formatDataClient(a.data) + ')' : '';
-      return '<div class="anunt-banner"><strong>📢 Anunț de la ' + cadru + dataTxt + ':</strong><br>' + a.text + '</div>';
+      const dataTxt = a.data ? ' (' + esc(formatDataClient(a.data)) + ')' : '';
+      return '<div class="anunt-banner"><strong>📢 Anunț de la ' + esc(cadru) + dataTxt + ':</strong><br>' + esc(a.text) + '</div>';
     }).join('');
   }
 
@@ -200,9 +219,9 @@
       const media = calculeazaMediaClient(notariD);
       const areNou = notariD.some(function (n) { return esteNouaNota(d, n, snapshotAnterior); });
       const detalii = notariD.map(function (n) {
-        return n.calificativ + ' (' + formatDataClient(n.data) + ')' + (esteNouaNota(d, n, snapshotAnterior) ? ' 🆕' : '');
+        return esc(n.calificativ) + ' (' + esc(formatDataClient(n.data)) + ')' + (esteNouaNota(d, n, snapshotAnterior) ? ' 🆕' : '');
       }).join(', ') || '—';
-      const numeDisc = d + (areNou ? ' <span title="Nou de la ultima ta vizită">🆕</span>' : '');
+      const numeDisc = esc(d) + (areNou ? ' <span title="Nou de la ultima ta vizită">🆕</span>' : '');
       return '<tr><td class="rd-disc">' + numeDisc + '</td><td class="rd-c"><strong>' + media + '</strong></td><td class="rd-detalii">' + detalii + '</td></tr>';
     }).join('');
   }
@@ -214,7 +233,7 @@
       const nemotivate = abs.filter(function (a) { return !a.motivata; }).length;
       const evid = nemotivate >= prag;
       const areNou = abs.some(function (a) { return esteNouaAbsenta(d, a, snapshotAnterior); });
-      const numeDisc = d + (areNou ? ' <span title="Nou de la ultima ta vizită">🆕</span>' : '');
+      const numeDisc = esc(d) + (areNou ? ' <span title="Nou de la ultima ta vizită">🆕</span>' : '');
       return '<tr' + (evid ? ' style="background:#FEE2E2;"' : '') + '><td class="rd-disc">' + numeDisc + '</td><td class="rd-c">' + total + '</td>' +
         '<td class="rd-c"' + (evid ? ' style="color:#DC2626;font-weight:800;"' : '') + '>' + nemotivate + (evid ? ' ⚠️' : '') + '</td></tr>';
     }).join('');
@@ -225,7 +244,7 @@
       const ore = (orar[idx] || []).slice().sort(function (a, b) { return formatOraClient(a.time).localeCompare(formatOraClient(b.time)); });
       if (!ore.length) return '';
       const linii = ore.map(function (o) {
-        return '<div class="rd-ora-linie"><span class="rd-ora-time">' + formatOraClient(o.time) + '</span><span>' + (o.disciplina || '') + '</span></div>';
+        return '<div class="rd-ora-linie"><span class="rd-ora-time">' + esc(formatOraClient(o.time)) + '</span><span>' + esc(o.disciplina || '') + '</span></div>';
       }).join('');
       return '<div class="rd-zi"><div class="rd-zi-titlu">' + zi + '</div>' + linii + '</div>';
     }).filter(Boolean).join('');
@@ -235,11 +254,16 @@
     const elev = payload.elev;
     const titlu = payload.titluCadru || '';
     const nume = payload.numeProfesoara || '';
-    const cadru = (titlu + ' ' + nume).trim() || 'învățătoarei';
+    const cadru = cadruDidactic(titlu, nume, 'acc');
+    const cadruGen = cadruDidactic(titlu, nume, 'gen');
+    const cadruChip = (titlu + ' ' + nume).trim();
+    // Serverul poate trimite elevi fără tabele de note/absențe — nu lăsăm pagina să cadă.
+    elev.note = elev.note || {};
+    elev.absente = elev.absente || {};
 
     let chipuriHtml = '';
-    if (payload.numeClasa) chipuriHtml += '<span class="chip">🎒 ' + payload.numeClasa + '</span>';
-    chipuriHtml += randChipuri(payload.anScolarAfisat, cadru);
+    if (payload.numeClasa) chipuriHtml += '<span class="chip">🎒 ' + esc(payload.numeClasa) + '</span>';
+    chipuriHtml += randChipuri(payload.anScolarAfisat, cadruChip);
 
     const snapshotAnterior = payload.snapshotAnterior;
     const areCevaNou = (payload.discipline || []).some(function (d) {
@@ -249,20 +273,20 @@
     const banerNou = areCevaNou ? '<div class="anunt-banner" style="background:#DBEAFE;border-color:#BFDBFE;color:#1E3A8A;">🆕 <strong>Ai ceva nou</strong> de la ultima ta vizită — vezi mai jos.</div>' : '';
 
     const mesajElevHtml = elev.mesajParinti
-      ? '<div class="mesaj-elev"><strong>💬 Observația ' + cadru + ':</strong><br>' + elev.mesajParinti + '</div>' : '';
+      ? '<div class="mesaj-elev"><strong>💬 Observația ' + esc(cadruGen) + ':</strong><br>' + esc(elev.mesajParinti) + '</div>' : '';
 
     const orarBlocuri = randOrar(payload.orar || []);
     const orarSectiune = orarBlocuri ? ('<h2 class="rd-h2">Orar</h2><div>' + orarBlocuri + '</div>') : '';
 
     const boxAbonare = elev.notificariActive
       ? '<div class="abonare-box no-print">' +
-        '  <p style="margin:0 0 10px;">✅ <strong>Ești abonat la notificări</strong> pentru situația școlară, pe <strong>' + elev.emailParinte + '</strong>.</p>' +
+        '  <p style="margin:0 0 10px;">✅ <strong>Ești abonat la notificări</strong> pentru situația școlară, pe <strong>' + esc(elev.emailParinte) + '</strong>.</p>' +
         '  <button type="button" class="btn-secundar" id="btn-dezaboneaza">Dezabonează-mă</button>' +
         '  <p class="msg" id="msg-abonare"></p>' +
         '</div>'
       : '<div class="abonare-box no-print">' +
         '  <label class="abonare-check"><input type="checkbox" id="check-notif"> Anunță-mă pe email când apare ceva nou</label>' +
-        '  <input type="email" id="input-email-parinte" placeholder="email-ul tău" value="' + (elev.emailParinte || '') + '" style="margin-top:6px;">' +
+        '  <input type="email" id="input-email-parinte" placeholder="email-ul tău" value="' + esc(elev.emailParinte || '') + '" style="margin-top:6px;">' +
         '  <button type="button" class="btn-secundar" id="btn-salveaza-abonare" style="margin-top:10px;">Salvează</button>' +
         '  <p class="msg" id="msg-abonare"></p>' +
         '</div>';
@@ -277,25 +301,25 @@
     if (elev.dateContact) {
       const lipsa = camp_contact.filter(function (c) { return !dc[c[0]]; }).map(function (c) { return c[1]; });
       statusContact = lipsa.length === 0
-        ? '<div class="anunt-banner" style="background:#DCFCE7;border-color:#BBF7D0;color:#166534;">✅ <strong>Toate datele au fost completate</strong> și au ajuns la învățătoare, pe ' + formatDataOraClient(dc.cand) + '.</div>'
-        : '<div class="anunt-banner">📋 Ai trimis date pe ' + formatDataOraClient(dc.cand) + ', dar mai lipsesc: <strong>' + lipsa.join(', ') + '</strong>. Completează mai jos și trimite din nou.</div>';
+        ? '<div class="anunt-banner" style="background:#DCFCE7;border-color:#BBF7D0;color:#166534;">✅ <strong>Toate datele au fost completate</strong> și au ajuns la învățătoare, pe ' + esc(formatDataOraClient(dc.cand)) + '.</div>'
+        : '<div class="anunt-banner">📋 Ai trimis date pe ' + esc(formatDataOraClient(dc.cand)) + ', dar mai lipsesc: <strong>' + esc(lipsa.join(', ')) + '</strong>. Completează mai jos și trimite din nou.</div>';
     }
 
     const formularContact =
       statusContact +
       '<p class="lead" style="margin-bottom:16px;">Datele astea ajung direct la învățătoare, la fișa copilului tău.</p>' +
-      '<label>Nume mamă</label><input type="text" id="cf-numeMama" value="' + (dc.numeMama || '') + '" placeholder="ex: Ionescu Maria">' +
-      '<label style="margin-top:10px;">Telefon mamă</label><input type="text" inputmode="numeric" id="cf-telefonMama" value="' + (dc.telefonMama || '') + '" placeholder="ex: 0722 123 456" oninput="filtreazaTelefon(this)">' +
-      '<label style="margin-top:10px;">Nume tată</label><input type="text" id="cf-numeTata" value="' + (dc.numeTata || '') + '" placeholder="ex: Ionescu Andrei">' +
-      '<label style="margin-top:10px;">Telefon tată</label><input type="text" inputmode="numeric" id="cf-telefonTata" value="' + (dc.telefonTata || '') + '" placeholder="ex: 0722 654 321" oninput="filtreazaTelefon(this)">' +
-      '<label style="margin-top:10px;">Adresă</label><input type="text" id="cf-adresa" value="' + (dc.adresa || '') + '" placeholder="ex: Str. Exemplu nr. 1, Ploiești">' +
+      '<label>Nume mamă</label><input type="text" id="cf-numeMama" value="' + esc(dc.numeMama || '') + '" placeholder="ex: Ionescu Maria">' +
+      '<label style="margin-top:10px;">Telefon mamă</label><input type="text" inputmode="numeric" id="cf-telefonMama" value="' + esc(dc.telefonMama || '') + '" placeholder="ex: 0722 123 456" oninput="filtreazaTelefon(this)">' +
+      '<label style="margin-top:10px;">Nume tată</label><input type="text" id="cf-numeTata" value="' + esc(dc.numeTata || '') + '" placeholder="ex: Ionescu Andrei">' +
+      '<label style="margin-top:10px;">Telefon tată</label><input type="text" inputmode="numeric" id="cf-telefonTata" value="' + esc(dc.telefonTata || '') + '" placeholder="ex: 0722 654 321" oninput="filtreazaTelefon(this)">' +
+      '<label style="margin-top:10px;">Adresă</label><input type="text" id="cf-adresa" value="' + esc(dc.adresa || '') + '" placeholder="ex: Str. Exemplu nr. 1, Ploiești">' +
       '<button type="button" class="btn-secundar" id="btn-salveaza-contact" style="margin-top:14px;">Trimite datele</button>' +
       '<p class="msg" id="msg-contact"></p>';
 
     const card = document.getElementById('card');
     card.innerHTML =
-      (payload.scoala ? '<div class="eyebrow">🏫 ' + payload.scoala + '</div>' : '') +
-      '<h1>' + elev.nume + '</h1>' +
+      (payload.scoala ? '<div class="eyebrow">🏫 ' + esc(payload.scoala) + '</div>' : '') +
+      '<h1>' + esc(elev.nume) + '</h1>' +
       '<div class="info-chips" style="margin-top:16px;margin-bottom:20px;">' + chipuriHtml + '</div>' +
       '<div class="tab-nav no-print">' +
       '<button type="button" class="tab-btn tab-btn-activ" id="tab-btn-catalog">📋 Catalog</button>' +
@@ -336,13 +360,20 @@
     document.getElementById('tab-btn-contact').classList.toggle('tab-btn-activ', activ === 'contact');
   }
 
+  // Cifre, spații și un „+” la început (pentru prefixul de țară, ex. +40 sau numere din străinătate).
   function filtreazaTelefon(input) {
-    input.value = input.value.replace(/[^\d\s]/g, '');
+    let v = input.value.replace(/[^\d\s+]/g, '');
+    v = v.charAt(0) === '+' ? '+' + v.slice(1).replace(/\+/g, '') : v.replace(/\+/g, '');
+    input.value = v;
   }
 
   function telefonValid(valoare) {
     if (!valoare) return true; // câmp opțional — gol e ok
-    return valoare.replace(/\s/g, '').length === 10;
+    const v = valoare.replace(/\s/g, '');
+    if (/^0\d{9}$/.test(v)) return true;               // 07xx xxx xxx
+    if (/^(\+40|0040)\d{9}$/.test(v)) return true;      // +40 7xx xxx xxx
+    if (/^(\+|00)[1-9]\d{6,14}$/.test(v)) return true;  // număr din altă țară
+    return false;
   }
 
   function trimiteDateContact(cod) {
@@ -360,7 +391,7 @@
     if (!telefonValid(campuri.telefonMama)) eroriTelefon.push('telefonul mamei');
     if (!telefonValid(campuri.telefonTata)) eroriTelefon.push('telefonul tatălui');
     if (eroriTelefon.length) {
-      msg.textContent = '⚠️ Verifică ' + eroriTelefon.join(' și ') + ' — trebuie să aibă exact 10 cifre.';
+      msg.textContent = '⚠️ Verifică ' + eroriTelefon.join(' și ') + ' — 10 cifre (ex: 0722 123 456), sau cu prefix de țară (ex: +40 722 123 456).';
       msg.classList.add('error');
       return;
     }
@@ -376,9 +407,24 @@
         msg.classList.add('ok');
       })
       .catch(function () {
-        const qs = Object.keys(campuri).map(function (k) { return k + '=' + encodeURIComponent(campuri[k]); }).join('&');
-        window.location.href = APPS_SCRIPT_URL + '?trimiteDateContact=1&cod=' + encodeURIComponent(cod) + '&' + qs;
+        // Rezervă: un formular obișnuit, trimis ca pagină. Datele (telefon, adresă) merg în
+        // corpul cererii, NU în link — nu rămân în istoricul browserului.
+        trimiteFormularRezerva(Object.assign({ tip: 'dateContact', cod: cod }, campuri));
       });
+  }
+
+  function trimiteFormularRezerva(campuri) {
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.action = APPS_SCRIPT_URL;
+    f.style.display = 'none';
+    Object.keys(campuri).forEach(function (k) {
+      const i = document.createElement('input');
+      i.type = 'hidden'; i.name = k; i.value = String(campuri[k] == null ? '' : campuri[k]);
+      f.appendChild(i);
+    });
+    document.body.appendChild(f);
+    f.submit();
   }
 
   function dezaboneaza(cod) {
@@ -394,8 +440,7 @@
         msg.textContent = '✓ Dezabonat. Reîncarcă pagina dacă vrei să te abonezi din nou.';
       })
       .catch(function () {
-        const url = APPS_SCRIPT_URL + '?aboneaza=1&cod=' + encodeURIComponent(cod) + '&email=&activ=0';
-        window.location.href = url;
+        trimiteFormularRezerva({ tip: 'abonare', cod: cod, email: '', activ: '0' });
       });
   }
 
@@ -409,6 +454,11 @@
       msg.classList.add('error');
       return;
     }
+    if (email && !emailValid(email)) {
+      msg.textContent = 'Adresa de email nu pare corectă. Verifică și încearcă din nou.';
+      msg.classList.add('error');
+      return;
+    }
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify({ tip: 'abonare', cod: cod, email: email, activ: activ })
@@ -416,14 +466,13 @@
       .then(function (r) { return r.json(); })
       .then(function (r) {
         if (!r || !r.ok) throw new Error('neconfirmat');
-        msg.textContent = '✓ Salvat.';
+        msg.textContent = activ ? '✓ Salvat. Vei primi un email când apare ceva nou.' : '✓ Salvat.';
         msg.classList.add('ok');
       })
       .catch(function () {
-        // Rezervă sigură: o pagină reală, care salvează și te aduce înapoi.
-        const url = APPS_SCRIPT_URL + '?aboneaza=1&cod=' + encodeURIComponent(cod) +
-          '&email=' + encodeURIComponent(email) + '&activ=' + (activ ? '1' : '0');
-        window.location.href = url;
+        // Rezervă sigură: o pagină reală, care salvează și te aduce înapoi
+        // (formular trimis ca pagină — emailul nu ajunge în link).
+        trimiteFormularRezerva({ tip: 'abonare', cod: cod, email: email, activ: activ ? '1' : '0' });
       });
   }
 
@@ -434,8 +483,8 @@
 
   function randChipuri(anScolarAfisat, cadru) {
     const chips = [];
-    if (anScolarAfisat) chips.push('<span class="chip">📅 An școlar ' + anScolarAfisat + '</span>');
-    if (cadru) chips.push('<span class="chip">👩‍🏫 ' + cadru + '</span>');
+    if (anScolarAfisat) chips.push('<span class="chip">📅 An școlar ' + esc(anScolarAfisat) + '</span>');
+    if (cadru) chips.push('<span class="chip">👩‍🏫 ' + esc(cadru) + '</span>');
     return chips.join('');
   }
 
@@ -476,6 +525,9 @@
       .catch(function () { return incearca(10000); }) // o a doua încercare, înainte de a renunța
       .then(function (payload) {
         if (!payload || !payload.ok) {
+          // Cod greșit: arătăm totuși școala și clasa (din răspuns sau din cererea de informații).
+          if (payload && payload.info) populeazaGateway(payload.info);
+          else preiaInfo().then(populeazaGateway).catch(function () {});
           reveleaza();
           const eroare = document.getElementById('eroare');
           eroare.textContent = 'Codul nu se potrivește. Mai verifică o dată cifrele primite de la învățătoare.';
@@ -483,7 +535,22 @@
           document.getElementById('cod').value = cod;
           return;
         }
-        afiseazaRaport(payload, cod);
+        // O eroare la desenarea paginii NU mai trimite părintele pe pagina de rezervă:
+        // e tratată separat, aici, cu un mesaj clar.
+        try {
+          afiseazaRaport(payload, cod);
+        } catch (err) {
+          reveleaza();
+          const eroare = document.getElementById('eroare');
+          eroare.textContent = 'Pagina nu a putut fi afișată complet. Reîncarcă pagina; dacă problema rămâne, anunță învățătoarea.';
+          eroare.style.display = 'block';
+          return;
+        }
+        // Abia DUPĂ ce raportul e pe ecran îi spunem serverului „am văzut" — așa, marcajele
+        // 🆕 nu se mai pierd dacă prima cerere a fost lentă și s-a reîncercat.
+        try {
+          fetch(APPS_SCRIPT_URL + '?vazut=1&cod=' + encodeURIComponent(cod) + '&_=' + Date.now(), { cache: 'no-store' }).catch(function () {});
+        } catch (e) { /* marcajul „văzut" e opțional */ }
       })
       .catch(function () {
         // Rezervă sigură, dovedită: navigare reală direct către raport, dacă ambele încercări eșuează.
