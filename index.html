@@ -448,6 +448,7 @@ select.camp { appearance: none; -webkit-appearance: none; padding-right: 36px;
 .data-nasterii { display: grid; grid-template-columns: 1fr 1.7fr 1.2fr; gap: 8px; }
 .data-nasterii select.camp { padding: 0 30px 0 12px; background-position: right 10px center; font-size: 16.5px; }
 .explica { margin: 0; color: var(--cerneala-3); font-size: 14.5px; }
+.explica.aviz-zi { color: var(--s); font-weight: 600; }
 .doua-campuri { display: grid; gap: 12px; }
 
 /* ------------------------------------------------------------------
@@ -1028,7 +1029,8 @@ select.camp { appearance: none; -webkit-appearance: none; padding-right: 36px;
     const dn = DATA.test(dc.dataNasterii || '') ? parti(dc.dataNasterii) : [0, 0, 0];
     const anCurent = new Date().getFullYear();
     let optZi = '<option value="">Ziua</option>';
-    for (let z = 1; z <= 31; z++) optZi += '<option value="' + z + '"' + (dn[2] === z ? ' selected' : '') + '>' + z + '</option>';
+    const zileLuna = zileInLuna(dn[1], dn[0]);
+    for (let z = 1; z <= zileLuna; z++) optZi += '<option value="' + z + '"' + (dn[2] === z ? ' selected' : '') + '>' + z + '</option>';
     let optLuna = '<option value="">Luna</option>';
     LUNI_INTREGI.forEach(function (l, i) { optLuna += '<option value="' + (i + 1) + '"' + (dn[1] === i + 1 ? ' selected' : '') + '>' + l + '</option>'; });
     let optAn = '<option value="">Anul</option>';
@@ -1053,6 +1055,7 @@ select.camp { appearance: none; -webkit-appearance: none; padding-right: 36px;
                 '<select class="camp" id="cf-luna" aria-label="Luna nașterii">' + optLuna + '</select>' +
                 '<select class="camp" id="cf-an" aria-label="Anul nașterii">' + optAn + '</select>' +
               '</div>' +
+              '<p class="explica aviz-zi" id="aviz-zi" role="status" style="margin-top:8px" hidden></p>' +
               '<p class="explica" style="margin-top:8px">Intră direct în catalog, la data nașterii copilului.</p>' +
             '</div>' +
           '</fieldset>' +
@@ -1081,7 +1084,39 @@ select.camp { appearance: none; -webkit-appearance: none; padding-right: 36px;
       '</section></div></div>';
 
     ['cf-telefonMama', 'cf-telefonTata'].forEach(function (id) { $(id).addEventListener('input', function () { filtreazaTelefon(this); }); });
+    ['cf-luna', 'cf-an'].forEach(function (id) { $(id).addEventListener('change', function () { actualizeazaZilele(true); }); });
+    $('cf-zi').addEventListener('change', function () { $('aviz-zi').hidden = true; });
     $('formular-date').addEventListener('submit', function (e) { e.preventDefault(); trimiteDate(); });
+  }
+
+  // Câte zile are luna: februarie 28 sau 29 (după an; fără an ales, 29), aprilie, iunie,
+  // septembrie și noiembrie 30, restul 31.
+  function zileInLuna(luna, an) {
+    luna = Number(luna) || 0; an = Number(an) || 0;
+    if (!luna) return 31;
+    if (luna === 2) return an ? new Date(an, 2, 0).getDate() : 29;
+    return new Date(2001, luna, 0).getDate();
+  }
+  // Refă lista zilelor când se schimbă luna sau anul. Ziua aleasă rămâne dacă există în noua
+  // lună; dacă nu (de exemplu 31 aprilie, 29 februarie 2021), lista revine la „Ziua”.
+  function actualizeazaZilele(arataAviz) {
+    const sz = $('cf-zi'); if (!sz) return;
+    const luna = $('cf-luna').value, an = $('cf-an').value;
+    const max = zileInLuna(luna, an);
+    const ales = Number(sz.value) || 0;
+    let opt = '<option value="">Ziua</option>';
+    for (let z = 1; z <= max; z++) opt += '<option value="' + z + '">' + z + '</option>';
+    sz.innerHTML = opt;
+    const ramane = ales && ales <= max;
+    sz.value = ramane ? String(ales) : '';
+    const aviz = $('aviz-zi');
+    if (aviz) {
+      if (ales && !ramane && arataAviz) {
+        const numeLuna = LUNI_INTREGI[Number(luna) - 1];
+        aviz.textContent = numeLuna.charAt(0).toUpperCase() + numeLuna.slice(1) + (Number(luna) === 2 && an ? ' ' + an : '') + ' are ' + max + ' de zile. Alege din nou ziua.';
+        aviz.hidden = false;
+      } else if (ramane || !ales) { aviz.hidden = true; }
+    }
   }
 
   // Cifre, spații și un „+” la început (prefix de țară).
@@ -1103,7 +1138,7 @@ select.camp { appearance: none; -webkit-appearance: none; padding-right: 36px;
       adresa: $('cf-adresa').value.trim(), dataNasterii: ''
     };
     const zi = $('cf-zi').value, luna = $('cf-luna').value, an = $('cf-an').value;
-    const pastreaza = function (mesaj) { deseneazaDate(mesaj, true); Object.keys(valori).forEach(function (k) { if ($('cf-' + k)) $('cf-' + k).value = valori[k]; }); $('cf-zi').value = zi; $('cf-luna').value = luna; $('cf-an').value = an; };
+    const pastreaza = function (mesaj) { deseneazaDate(mesaj, true); Object.keys(valori).forEach(function (k) { if ($('cf-' + k)) $('cf-' + k).value = valori[k]; }); $('cf-luna').value = luna; $('cf-an').value = an; actualizeazaZilele(false); $('cf-zi').value = zi; };
     if ((zi || luna || an) && !(zi && luna && an)) { pastreaza('Alege ziua, luna și anul nașterii.'); return; }
     if (zi && luna && an) {
       const d = new Date(Number(an), Number(luna) - 1, Number(zi));
