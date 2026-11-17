@@ -772,7 +772,9 @@ select.camp { appearance: none; -webkit-appearance: none; padding-right: 36px;
           else preiaInfo().then(populeazaPaginaCod).catch(function () {});
           arata('cod');
           $('cod').value = cod;
-          arataEroareCod('Codul „' + cod + '” nu se potrivește. Verifică literele și cifrele de pe fișă și încearcă din nou.');
+          // Copilul a plecat din clasă (trecerea în anul următor): mesajul doamnei învățătoare.
+          if (payload && payload.retras && typeof payload.mesaj === 'string' && payload.mesaj.trim()) arataEroareCod(payload.mesaj.trim().slice(0, 300));
+          else arataEroareCod('Codul „' + cod + '” nu se potrivește. Verifică literele și cifrele de pe fișă și încearcă din nou.');
           return;
         }
         try {
